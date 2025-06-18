@@ -4,8 +4,7 @@ clear all
 
 
 % BLSA_subject_path = '/home-local/bayrakrg/Dropbox (VUMC)/complete_BLSA_subjects';
-% BLSA_subject_path = '/nfs/masi/bayrakrg/tractem_data/corrected/BLSA';
-BLSA_subject_path = '/nfs/masi/wangx41/auto_tracked_from_corrected_regions/BLSA';
+BLSA_subject_path = '/nfs/masi/bayrakrg/tractem_data/corrected/BLSA';
 BLSA_subject_dirs = dir(BLSA_subject_path);
 
 % The last version of the protocol
@@ -121,7 +120,7 @@ dropfiles(~contains(filenames, {'.','..','.dropbox', 'postproc', 'tracking_param
 BLSA_subject_dirs = BLSA_subject_dirs(dropfiles);
 
 blsa_data = [];
-blsa_error_data =  [];
+
 for subj = 1:length(BLSA_subject_dirs)
     
     disp(BLSA_subject_dirs(subj).name);
@@ -130,11 +129,11 @@ for subj = 1:length(BLSA_subject_dirs)
     tract_dirs = dir(fullfile(BLSA_subject_dirs(subj).folder,BLSA_subject_dirs(subj).name,'*'));
     tract_dirs = tract_dirs(~ismember({tract_dirs.name},{'.','..'}));
     if ~isempty(tract_dirs)        
-%         
-%         tractfolders = cellstr(char(tract_dirs.name));
-%         dropfolders = false(length(tract_dirs),1);
-%         dropfolders(~contains(tractfolders, {'.', '..', '_fib.gz', '_fib_qa.nii.gz','density','postproc','QA'})) = true; 
-%         tract_dirs = tract_dirs(dropfolders);
+        
+        tractfolders = cellstr(char(tract_dirs.name));
+        dropfolders = false(length(tract_dirs),1);
+        dropfolders(~contains(tractfolders, {'.', '..', '_fib.gz', '_fib_qa.nii.gz','density','postproc','QA'})) = true; 
+        tract_dirs = tract_dirs(dropfolders);
 
         for trk = 1:length(tract_dirs)
 
@@ -176,7 +175,6 @@ for subj = 1:length(BLSA_subject_dirs)
                 
                 tractem_data.error = error_files;
                 tractem_data.error_count = length(error_files);
-                
 
                 for file = 1:length(files)
 
@@ -189,6 +187,7 @@ for subj = 1:length(BLSA_subject_dirs)
                         else
                             seed_array = [seed_array ', ' files(file).name];
                         end
+
                     end
 
                     if contains(files(file).name, 'ROA')
@@ -228,36 +227,23 @@ for subj = 1:length(BLSA_subject_dirs)
                         else
                             trk_array = [trk_array ', ' files(file).name];
                         end
-                    end                    
-                end
-                
-                
-                tractem_data.seed = seed_array;
-                tractem_data.ROA = ROA_array;         
-                tractem_data.ROI = ROI_array;
-                tractem_data.density = density_array;
-                tractem_data.trk = trk_array;
-                tractem_data.location = files(file).folder;
-                
 
-                if sum(contains(abb_string, '.trk')) > 1  
-                    tractem_data.bilateral = 'YES';
-                else
-                    tractem_data.bilateral = 'single';
-                end
-                
-                % record when there is error
-                if sum(contains(abb_string, 'seed')) ~= sum(contains({files.name}, 'seed')) || sum(contains(abb_string, 'ROA')) ~= sum(contains({files.name}, 'ROA')) ...
-                        || sum(contains(abb_string, 'ROI')) ~= sum(contains({files.name}, 'ROI')) 
+                    end 
                     
-                    tractem_data.missing = abb_string(~ismember(abb_string, {files.name}));
-                    blsa_error_data =  [blsa_error_data tractem_data];
+                    tractem_data.seed = seed_array;
+                    tractem_data.ROA = ROA_array;         
+                    tractem_data.ROI = ROI_array;
+                    tractem_data.density = density_array;
+                    tractem_data.trk = trk_array;
+                    tractem_data.location = files(file).folder;
                     
-                else
-                    tractem_data.missing = {};
+                    if contains(files(file).name, '_L_tract') ||  contains(files(file).name, '_R_tract')           
+                        tractem_data.bilateral = 'YES';
+                    else
+                        tractem_data.bilateral = 'single or unknown';
+                    end
+
                 end
-                
-                tractem_data.extra = {error_files};
                 
                 blsa_data = [blsa_data tractem_data];
 
@@ -266,30 +252,9 @@ for subj = 1:length(BLSA_subject_dirs)
     end
 end
 
-save('autoblsa_corrected_data.mat', 'blsa_data');
+save('blsa_corrected_data.mat', 'blsa_data');
 
-%%
-sub = blsa_data([blsa_data.error_count]>0);
 
-tract = {'anterior_commissure';'anterior_corona_radiata';'anterior_limb_internal_capsule';'body_corpus_callosum'; ...
-    'cerebral_peduncle'; 'cingulum_cingulate_gyrus';'cingulum_hippocampal';'corticospinal_tract';'fornix';'fornix_stria_terminalis';...
-    'frontal_lobe';'genu_corpus_callosum';'inferior_cerebellar_peduncle';'inferior_fronto_occipital_fasciculus';...
-    'inferior_longitudinal_fasciculus';'medial_lemniscus';'midbrain'; 'middle_cerebellar_peduncle';...
-    'occipital_lobe';'olfactory_radiation';'optic_tract';'parietal_lobe';'pontine_crossing_tract';'posterior_corona_radiata';...
-    'posterior_limb_internal_capsule';'posterior_thalamic_radiation';'sagittal_stratum';'splenium_corpus_callosum';...
-    'superior_cerebellar_peduncle'; 'superior_corona_radiata';'superior_fronto_occipital_fasciculus';...
-    'superior_longitudinal_fasciculus';'tapetum_corpus_callosum';'temporal_lobe';'uncinate_fasciculus'};
-
-tract_first_error = [];
-for n = 1:length(tract)
-    tract_spec = [];
-    tract_spec = sub(strcmp({sub.tract}, tract{n}));
-    if ~isempty(tract_spec)
-        tract_first_error = [tract_first_error tract_spec];
-    end 
-end
-
-save('autoblsa_error_data.mat', 'tract_first_error');
 %%
 orig = load('blsa_original_data.mat');
 sum([orig.blsa_data.error_count])

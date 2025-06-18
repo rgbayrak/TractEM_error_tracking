@@ -5,10 +5,10 @@ function output = tract_dice(exdensDir, newdensDir, threshold)
     
     El = length(exdensDir);
     Nl = length(newdensDir);
+     
+    ex_density = norm_func(ex_density, El);
+    new_density = norm_func(new_density, Nl);
     
-    ex_density = normalize(ex_density, El);
-    new_density = normalize(new_density, Nl);
-
     % Binarize
     ex_density(ex_density <= threshold) = 0;
     ex_density(ex_density > threshold) = 1;  
@@ -18,7 +18,7 @@ function output = tract_dice(exdensDir, newdensDir, threshold)
     
     % Dice calculation
     init = 0;
-    diceMatrix = [];
+    scoreMatrix = [];
     nameMe = [];
     second_name = [];
     
@@ -34,7 +34,7 @@ function output = tract_dice(exdensDir, newdensDir, threshold)
             
             % Initialization
             if ~init
-                diceMatrix = zeros([El 1]);
+                scoreMatrix = zeros([El 1]);
                 init = 1;
             end
                 
@@ -42,14 +42,25 @@ function output = tract_dice(exdensDir, newdensDir, threshold)
             
                 im1 = ex_density(:,:,:,i);
                 im2 = new_density(:,:,:,j); 
-                dice_score = dice_func(im1, im2);
+                score = dice_func(im1, im2);
+                score2 = icc_func(im1, im2);
+                
+%                 % debugging, if  the score is zero make sure it actually
+%                 % is
+%                 if score == 0
+%                     pause
+%                 end
 
                 % Converting it into a symmetric matrix form
-                diceMatrix(i) = dice_score;
+                if isnan(score)
+                	scoreMatrix(i) = 0;
+                else
+                    scoreMatrix(i) = score;
+                end
                 nameMe = [nameMe convertCharsToStrings([dirParti ' ,' dirPartj])]; % getting the subject names 
             end  
         end
         second_name = [second_name convertCharsToStrings(dirParti)];
     end
-    output = [second_name' diceMatrix];
+    output = [second_name' scoreMatrix];
 end

@@ -120,7 +120,6 @@ dropfiles(~contains(filenames, {'.','..','.dropbox', 'postproc', 'tracking_param
 HCP_subject_dirs = HCP_subject_dirs(dropfiles);
 
 hcp_data = [];
-hcp_error_data = [];
 
 for subj = 1:length(HCP_subject_dirs)
     
@@ -173,8 +172,7 @@ for subj = 1:length(HCP_subject_dirs)
                 dropfile(contains(fileslist, abb_string)) = true;
                 error_files = files(~dropfile);
                 files = files(dropfile);
-%                 
-%                 tractem_data.extra = error_files;
+                
                 tractem_data.error = error_files;
                 tractem_data.error_count = length(error_files);
 
@@ -316,8 +314,7 @@ for subj = 1:length(HCP_subject_dirs)
                 
                 tractem_data.error = error_files;
                 tractem_data.error_count = length(error_files);
-           
-                % list only good files
+
                 for file = 1:length(files)
 
                     disp(files(file).name);
@@ -371,34 +368,21 @@ for subj = 1:length(HCP_subject_dirs)
                         end
 
                     end 
+                    
+                    tractem_data.seed = seed_array;
+                    tractem_data.ROA = ROA_array;         
+                    tractem_data.ROI = ROI_array;
+                    tractem_data.density = density_array;
+                    tractem_data.trk = trk_array;
+                    tractem_data.location = files(file).folder;
+                    
+                    if contains(files(file).name, '_L_tract') ||  contains(files(file).name, '_R_tract')           
+                        tractem_data.bilateral = 'YES';
+                    else
+                        tractem_data.bilateral = 'single or unknown';
+                    end
 
                 end
-                
-                tractem_data.seed = seed_array;
-                tractem_data.ROA = ROA_array;         
-                tractem_data.ROI = ROI_array;
-                tractem_data.density = density_array;
-                tractem_data.trk = trk_array;
-                tractem_data.location = files(file).folder;
-
-                if sum(contains(abb_string, '.trk')) > 1  
-                    tractem_data.bilateral = 'YES';
-                else
-                    tractem_data.bilateral = 'single';
-                end
-                    
-                % record when there is error
-                if sum(contains(abb_string, 'seed')) ~= sum(contains({files.name}, 'seed')) || sum(contains(abb_string, 'ROA')) ~= sum(contains({files.name}, 'ROA')) ...
-                        || sum(contains(abb_string, 'ROI')) ~= sum(contains({files.name}, 'ROI')) 
-                    
-                    tractem_data.missing = abb_string(~ismember(abb_string, {files.name}));
-                    hcp_error_data =  [hcp_error_data tractem_data];
-                    
-                else
-                    tractem_data.missing = {};
-                end
-                
-                tractem_data.extra = error_files;
                 
                 hcp_data = [hcp_data tractem_data];
 
@@ -408,52 +392,6 @@ for subj = 1:length(HCP_subject_dirs)
 end
 
 save('hcp_corrected_data.mat', 'hcp_data');
-
-%%
-% % for tract first all files
-% sub = hcp_data([hcp_data.error_count]>-1);
-
-% only error files
-sub = hcp_data([hcp_data.error_count]>0);
-
-
-tract = {'anterior_commissure';'anterior_corona_radiata';'anterior_limb_internal_capsule';'body_corpus_callosum'; ...
-    'cerebral_peduncle'; 'cingulum_cingulate_gyrus';'cingulum_hippocampal';'corticospinal_tract';'fornix';'fornix_stria_terminalis';...
-    'frontal_lobe';'genu_corpus_callosum';'inferior_cerebellar_peduncle';'inferior_fronto_occipital_fasciculus';...
-    'inferior_longitudinal_fasciculus';'medial_lemniscus';'midbrain'; 'middle_cerebellar_peduncle';...
-    'occipital_lobe';'olfactory_radiation';'optic_tract';'parietal_lobe';'pontine_crossing_tract';'posterior_corona_radiata';...
-    'posterior_limb_internal_capsule';'posterior_thalamic_radiation';'sagittal_stratum';'splenium_corpus_callosum';...
-    'superior_cerebellar_peduncle'; 'superior_corona_radiata';'superior_fronto_occipital_fasciculus';...
-    'superior_longitudinal_fasciculus';'tapetum_corpus_callosum';'temporal_lobe';'uncinate_fasciculus'};
-
-tract_first_error = [];
-for n = 1:length(tract)
-    tract_spec = [];
-    tract_spec = sub(strcmp({sub.tract}, tract{n}));
-    if ~isempty(tract_spec)
-        tract_first_error = [tract_first_error tract_spec];
-    end 
-end
-
-% for t = 1:length(tract_first_error)
-%     
-%     tract_first_error_name_list = {tract_first_error(t).error.name};
-%     list = [];
-%     init = 0;
-%     for l = 1:length(tract_first_error_name_list)
-%         
-%        if init == 0
-%            list = [tract_first_error_name_list{l}];
-%            init = 1;
-%        else
-%            list = [list ; tract_first_error_name_list{l}];
-%        end      
-%     end
-%     tract_first_error(t).error_type = list;
-% end
-
-
-save('hcp_error_data.mat', 'tract_first_error');
 
 %%
 orig = load('hcp_original_data.mat');

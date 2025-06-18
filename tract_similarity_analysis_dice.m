@@ -5,18 +5,17 @@ close all;
 clear all;
 clc;
 
-
-% % HCP
-newDir              = {'/nfs/masi/wangx41/auto_tracked_from_corrected_regions/BLSA18'}; %'/nfs/masi/wangx41/auto_tracked_from_corrected_regions/BLSA'; '/nfs/masi/wangx41/auto_tracked_from_corrected_regions/HCP'}; 
-exDir               = {'/nfs/masi/bayrakrg/tractem_data/corrected/BLSA18'}; %'/nfs/masi/bayrakrg/tractem_data/corrected/BLSA'; '/nfs/masi/bayrakrg/tractem_data/corrected/HCP'};
-outDir              = {'/nfs/masi/bayrakrg/tractem_data/tract_similarity/BLSA18'}; %'/nfs/masi/bayrakrg/tractem_data/tract_similarity/BLSA'; '/nfs/masi/bayrakrg/tractem_data/tract_similarity/HCP'};
+newDir              = {'/nfs/masi/wangx41/auto_tracked_from_corrected_regions/HCP'; '/nfs/masi/wangx41/auto_tracked_from_corrected_regions/BLSA18';'/nfs/masi/wangx41/auto_tracked_from_corrected_regions/BLSA'};% 
+exDir               = {'/nfs/masi/bayrakrg/tractem_data/corrected/HCP'; '/nfs/masi/bayrakrg/tractem_data/corrected/BLSA18';'/nfs/masi/bayrakrg/tractem_data/corrected/BLSA'};% 
+outDir              = {'/nfs/masi/bayrakrg/tractem_data/tract_similarity/HCP'; '/nfs/masi/bayrakrg/tractem_data/tract_similarity/BLSA18';'/nfs/masi/bayrakrg/tractem_data/tract_similarity/BLSA'};% 
 
 for e = 1:length(exDir)
     exsubDir = fullfile(exDir{e}, '*/');  % directory names are as follows -> subject_rater
     newsubDir = fullfile(newDir{e}, '*/');  % tract names are defined as published  
 
     abbList = {'ac'; 'acr'; 'aic'; 'bcc'; 'cp'; 'cgc'; 'cgh'; 'cst'; 'fx'; 'fxst'; 'fl'; 'gcc'; 'icp'; 'ifo'; 'ilf'; 'ml'; 'm'; 'mcp'; 'ol'; 'olfr'; ...
-                'opt'; 'pl'; 'pct'; 'pcr'; 'pic'; 'ptr'; 'ss'; 'scc'; 'scp'; 'scr'; 'sfo'; 'slf'; 'tap'; 'tl'; 'unc'};
+                'opt'; 'pl'; 'pct'; 'pcr'; 'pic'; 'ptr'; 'ss'; 'scc'; 'scp'; 'scr'; 'sfo'; 'slf'; 'tap'; 'tl'; 'unc'}; 
+
     tractList = {'anterior_commissure';'anterior_corona_radiata';'anterior_limb_internal_capsule';'body_corpus_callosum'; ...
         'cerebral_peduncle'; 'cingulum_cingulate_gyrus';'cingulum_hippocampal';'corticospinal_tract';'fornix';'fornix_stria_terminalis';...
         'frontal_lobe';'genu_corpus_callosum';'inferior_cerebellar_peduncle';'inferior_fronto_occipital_fasciculus';...
@@ -26,7 +25,6 @@ for e = 1:length(exDir)
         'superior_cerebellar_peduncle'; 'superior_corona_radiata';'superior_fronto_occipital_fasciculus';...
         'superior_longitudinal_fasciculus';'tapetum_corpus_callosum';'temporal_lobe';'uncinate_fasciculus'};
 
-
     % % OVERLAP BASED METRICS
     % Dice Coefficient --------------------------------------------------------------------------------------------------------------------
     threshold = 0.05;
@@ -34,7 +32,7 @@ for e = 1:length(exDir)
     for l = 1:length(abbList)
         % get track folders and do analysis on them
         exdensDir = dir(fullfile(exsubDir, tractList{l}, [abbList{l} '*density.nii.gz'])); % not every folder has separate density files (left & right)
-        newdensDir = dir(fullfile(newsubDir, tractList{l}, [abbList{l} '*.nii.gz'])); 
+        newdensDir = dir(fullfile(newsubDir, tractList{l}, [abbList{l} '*density.nii.gz'])); 
 
         
         if length(strfind(exdensDir(1).name,'_')) == 1            
@@ -45,9 +43,9 @@ for e = 1:length(exDir)
 
         elseif length(strfind(exdensDir(1).name,'_')) == 2
             exdensDir_L = dir(fullfile(exsubDir, tractList{l}, [abbList{l} '*_L_density.nii.gz']));
-            newdensDir_L = dir(fullfile(newsubDir, tractList{l}, [abbList{l} '*_L_*.nii.gz']));
+            newdensDir_L = dir(fullfile(newsubDir, tractList{l}, [abbList{l} '*_L_density.nii.gz']));
             exdensDir_R = dir(fullfile(exsubDir, tractList{l}, [abbList{l} '*_R_density.nii.gz']));
-            newdensDir_R = dir(fullfile(newsubDir, tractList{l}, [abbList{l} '*_R_*.nii.gz']));
+            newdensDir_R = dir(fullfile(newsubDir, tractList{l}, [abbList{l} '*_R_density.nii.gz']));
             
             if length(strfind(exdensDir_L(1).name,'_L')) == 1
                 out_L = tract_dice(exdensDir_L, newdensDir_L,  threshold);
